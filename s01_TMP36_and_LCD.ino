@@ -20,7 +20,7 @@ void loop() {
   int tmpValue = analogRead(tmpPin);
   float voltage = tmpValue * 5.0;
   voltage /= 1024.0;
-  float tempCelsius = (voltage - 0.5) * 100 ;
+  float tempCelsius = (voltage - 0.5) * 100 + 4.5;
   float tempFarenheit = (9/5)*tempCelsius + 32;
   Serial.print(voltage);
   Serial.print(" volts ");
@@ -38,5 +38,6 @@ void loop() {
   lcd.setCursor(0,1);
   lcd.print("HUMIDITY:");
   lcd.print(humidity);
+  lcd.print("%");
   delay(2000);
 }
