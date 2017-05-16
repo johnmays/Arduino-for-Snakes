@@ -35,6 +35,8 @@ DHT dht(DHTPIN, DHTTYPE);
 //CONNECTING TO i2C, DEFAUT PIN #0:
 Adafruit_LiquidCrystal lcd(0);
 
+//ASSIGNING BUILTIN LED
+int led = 1; // blink 'digital' pin 1 - AKA the built in red LED
 
 //GLOBAL(S):
 bool badRead = false;
@@ -45,7 +47,9 @@ void setup() {
   //start LCD and Temp Sensor
   dht.begin();
   lcd.begin(16, 2);            
-  lcd.setBacklight(HIGH);   //didn't know about backlight until now
+  lcd.setBacklight(LOW);   
+  pinMode(led, OUTPUT);   //talking to builtin
+  digitalWrite(led, LOW);   //turning the builtin off
 }
  
 void loop() {
