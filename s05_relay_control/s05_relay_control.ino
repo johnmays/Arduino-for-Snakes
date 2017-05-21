@@ -47,9 +47,11 @@ const int upTimePin= 8;             //7
   int prevUpTimeSwitchState = 0;
 const int manualSwitchPin= 9;       //8
   int manualSwitchSwitchState = 0;
-  int prevManualSwitchSwitchState = 0;
+
+const int relayPin = 10;
 
 const int timeIncrement = 5;
+
 
 void setup(){
   lcd.begin(16, 2);
@@ -64,23 +66,23 @@ void setup(){
   pinMode(downTimePin, INPUT);
   pinMode(upTimePin, INPUT);
   pinMode(manualSwitchPin, INPUT);
+  pinMode(relayPin, OUTPUT);
   delay(2000);
 }
 
 void loop(){
   handleInputs();
   handlePrevSwitchStates();
+  isRelayOn();
   calculateTime();
   calculateRelayState();
+  
   if(whichFlash == true){
     flashOne();  
   }else{
     flashTwo();  
   }
-  seconds = seconds + flashTime;
-  
-  
-  delay(flashTime * 1000);//IN MILLIS
+  delay(1000 * flashTime);
 }
 
 void flashOne(){
@@ -129,7 +131,7 @@ void flashTwo(){
   }else{
     lcd.print(" PM");
   }
-  whichFlash = true;
+    whichFlash = true;
 }
 
 void calculateTime(){
@@ -187,5 +189,12 @@ void handlePrevSwitchStates(){
   prevUpOnTimeSwitchState = upOnTimeSwitchState;
   prevDownTimeSwitchState = downTimeSwitchState;
   prevUpTimeSwitchState = upTimeSwitchState;
-  prevManualSwitchSwitchState = manualSwitchSwitchState;  
+}
+void isRelayOn(){
+  manualSwitchSwitchState = digitalRead(manualSwitchPin);
+  if(manualSwitchSwitchState == 0){
+    digitalWrite(relayPin, LOW);
+  }else{
+    digitalWrite(relayPin, HIGH);
+  }
 }
