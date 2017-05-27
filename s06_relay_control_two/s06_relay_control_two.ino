@@ -14,20 +14,29 @@ Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #A5 & CLK PIN #A4:
 
 bool whichFlash = true; //true = flashOne(); false = flashTwo();
 const int flashTime = 3; //NUMBER OF SECONDS THE DISPLAY SHOULD FLASH ONE SCREEN OR ANOTHER
+//SHOULD BE FACTOR OF 60 EX: 2,3,4,5,6, FOR manageCurrentTime();
 
 unsigned long previousMillis = 0;
 
+int curSeconds = 0;
+int curMinutes = 0;
+int curHours = 0;
+bool curAM = true;
+
 
 void setup() {
-  
+  lcd.begin(16, 2);
+  lcd.setBacklight(HIGH);
+  lcd.print("Hello, World!");
+  delay(5000);
 
 }
 
 void loop() {
-  
+  manageCurrentTime;
   unsinged long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= interval) {
+//ASSIGNING FLASH WITHOUT DELAY
+  if (currentMillis - previousMillis >= flashTime*1000) {
     previousMillis = currentMillis;
 
     if (whichFlash == false) {
@@ -35,8 +44,9 @@ void loop() {
     } else {
       whichFlash = false;   
     }
-    
+    curSeconds = curSeconds + flashTime;
   }
+//EXECUTING FLASH BASED ON ASSIGNED [whichFlash] BOOL
   if(whichFlash == true){
     flashOne();
   } else {
@@ -44,4 +54,37 @@ void loop() {
   }
 
 
+}
+
+void flashOne(){
+//THIS FUNCTION SHOULD DISPLAY THE CURRENT TIME WHEN CALLED
+  lcd.setCursor(0,0);
+  lcd.clear();
+  lcd.print(curHours);
+
+}
+void flashTwo(){
+//THIS FUNCTION SHOULD DISPLAY THE ON/OFF TIMES WHEN CALLED
+  
+}
+void manageCurrentTime(){
+
+  if(curSeconds == 60){//SECONDS:
+    curSeconds = 0;
+    curMinutes += 1;
+  } 
+
+  if(curMinutes == 60){//MINUTES:
+    curMinutes = 0;
+    curHours += 1;
+  } 
+
+  if(curHours == 12){//HOURS AND PM/AM
+    curHours = 0;
+    if(curAM == true){
+      curAM = false;
+    }else{
+      curAM = true;
+    }
+  }
 }
