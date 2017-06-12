@@ -14,15 +14,16 @@ Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #A5 & CLK PIN #A4:
 
 bool whichFlash = true; //true = flashOne(); false = flashTwo();
 
-const int flashTime = 5; //NUMBER OF SECONDS THE DISPLAY SHOULD FLASH ONE SCREEN OR ANOTHER
-//SHOULD BE FACTOR OF 60 EX: 2,3,4,5,6, FOR manageCurrentTime();
+const int flashTime = 3; //NUMBER OF SECONDS THE DISPLAY SHOULD FLASH ONE SCREEN OR ANOTHER
+//SHOULD BE FACTOR OF 60 EX: 1,2,3,4,5,6, FOR manageCurrentTime();
 
 const int inputIncrement = 5;
 
 unsigned long previousMillis = 0;
 
 int curSeconds = 0;
-int curMinutes = 0;
+int curMinutes = 15;
+int overflowMinutes = 0;
 int curHours = 0;
 bool curAM = true;
 
@@ -34,13 +35,14 @@ int offMinutes = 30;
 int offHours = 6;
 bool offAM = false;
 
-int relayPin = 2;
-int powerSwitchPin = 4;
-int upPin = 5;
+const int relayPin = 2;
+const int powerSwitchPin = 4;
+
+const int upPin = 5;
 int upSwitchState = 0;
 int prevUpSwitchState = 0;
 
-int downPin = 6;
+const int downPin = 6;
 int downSwitchState = 0;
 int prevDownSwitchState = 0;
 
@@ -79,7 +81,7 @@ void loop() {
     
     curSeconds = curSeconds + flashTime;
   }
-  manageCurrentTime();
+  manageCurrentTimeProgression();
   manageRelayState();
   manageAllTimes();
 }
@@ -97,6 +99,11 @@ void flashOne(){
     lcd.print("0");
   }
   lcd.print(curMinutes);
+  if(curAM == true){
+    lcd.print(" AM");  
+  }else{
+    lcd.print(" PM");
+  }
 }
 void flashTwo(){
 //THIS FUNCTION SHOULD DISPLAY THE ON/OFF TIMES WHEN CALLED
@@ -110,9 +117,9 @@ void flashTwo(){
   }
   lcd.print(onMinutes);
   if(onAM == true){
-    lcd.print("AM");  
+    lcd.print(" AM");  
   }else{
-    lcd.print("PM");
+    lcd.print(" PM");
   }
   lcd.setCursor(0,1);
   lcd.print("OFF: ");
@@ -123,13 +130,13 @@ void flashTwo(){
   }
   lcd.print(offMinutes);
   if(offAM == true){
-    lcd.print("AM");  
+    lcd.print(" AM");  
   }else{
-    lcd.print("PM");
+    lcd.print(" PM");
   }
   
 }
-void manageCurrentTime(){
+void manageCurrentTimeProgression(){
 
   if(curHours == 12){//HOURS AND PM/AM
     curHours = 0;
@@ -140,45 +147,70 @@ void manageCurrentTime(){
     }
   }
   
-  if(curMinutes == 60){//MINUTES:
-    curMinutes = 0;
+  if(curMinutes >= 60){//MINUTES:
+    overflowMinutes = curMinutes - 60;    //IN CASE IT GETS MANUALLY INCREMENTED ABOVE 60
+    curMinutes = 0 + overflowMinutes;     //EX: (11:58 SHOULD TURN TO 12:03, NOT 12:00)
     curHours = curHours + 1;
   } 
 
-  if(curSeconds == 60){//SECONDS:
+  if(curSeconds >= 60){//SECONDS:
     curSeconds = 0;
     curMinutes = curMinutes + 1;
   } 
+  if(curMinutes < 0){
+    curHours = curHours - 1;
+    curMinutes = curMinutes + 60;  
+  }
+  if(curHours < 0){
+    curHours = curHours + 12;
+    if(curAM == false){
+      curAM = true;
+    }else{
+      curAM = false;
+    }  
+  }
 
 }
 void manageRelayState(){
+  //THE RELAY SHOULD BE OFF WHEN SWITCH IS OFF BUT TIMED WHEN SWITCH IS ON
+
+  
   int switchState = digitalRead(powerSwitchPin);
-  if(switchState == HIGH){//BUTTON IS CLOSED
-    digitalWrite(relayPin, HIGH);
+  if(switchState == HIGH){
+      //SWITCH SAYS OFF MEANING RELAY IS UNCONDITIONALLY ON
+      
+    digitalWrite(relayPin, HIGH);//LIGHT OFF  {UNCONDITIONALLY}
   }else{
-    digitalWrite(relayPin, LOW);
+      //SWITCH SAYS ON MEANING DETERMINATION PROCESS SHOULD BE ON
+
+    /*THIS DETERMINES WHETHER OR NOT TO TURN THE RELAY ON OR OFF
+     *RELATIVE TO THE ON AND OFF TIMES AND WHETHER OR NOT
+     *THE CURRENT TIME IS WITHIN RANGE
+     */
+    if(curHours > onHours - 1 && onAM == curAM){
+      digitalWrite(relayPin, LOW);//LIGHT ON
+    } else if(curHours == onHours - 1 && curMinutes >= onMinutes && onAM == curAM){
+      digitalWrite(relayPin, LOW);//LIGHT ON
+    } else if(curHours < offHours - 1 && curAM == offAM){
+      digitalWrite(relayPin, LOW);//LIGHT ON
+    } else if(curHours == offHours - 1 && curMinutes < offMinutes && curAM == offAM){
+      digitalWrite(relayPin, LOW);//LIGHT ON
+    }else{
+      digitalWrite(relayPin, HIGH);//LIGHT OFF
+    }
   }
   
 }
 void manageAllTimes(){ 
   //THIS IS TEMPORARILY JUST FOR [curTime]
   upSwitchState = digitalRead(upPin);
-  downSwitchState = digitalRead(upPin);
-  if(upSwitchState != prevUpSwitchState){
+  downSwitchState = digitalRead(downPin);
+  if(upSwitchState != prevUpSwitchState && upSwitchState == 0){
     curMinutes = curMinutes + inputIncrement;
   }
-  if(downSwitchState != prevDownSwitchState){
+  if(downSwitchState != prevDownSwitchState && downSwitchState == 0){
     curMinutes = curMinutes - inputIncrement;
   }
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
-//THIS IS WHERE I AM THERE ARE ERRORS
 
   prevUpSwitchState = upSwitchState;
   prevDownSwitchState = downSwitchState;
