@@ -29,19 +29,20 @@ const int relayPin = 9;
 const int protoSwitchPin = 10;
 bool backlight = true;
 
-//On at 9:00 AM
+//CURRENT TIME:
+int curHours = 3; //( +1 )
+int curMinutes = 46;
+int curSeconds = 30;
+bool curAM = false;
+
+//ON AT 9:00 AM
   const int onHours = 9;
   const int onMinutes = 00;
   const bool onAM = true;
-//Off at 10:00 PM 
+//OFF AT 10:00 PM 
   const int offHours = 10;
   const int offMinutes = 00;
   const bool offAM = false;
-
-int curHours = 3; //( +1 )
-int curMinutes = 40;
-int curSeconds = 30;
-bool curAM = false;
 
 
 
@@ -80,6 +81,11 @@ void printToLCD(){
     lcd.print("0");//WANT TO PRINT '9:01', NOT '9:1'  
   }
   lcd.print(curMinutes);
+  lcd.print(":");
+  if(curSeconds < 10){
+    lcd.print("0");//WANT TO PRINT '9:01', NOT '9:1'  
+  }
+  lcd.print(curSeconds);
   if(curAM == true){
     lcd.print("AM");  
   }else{
