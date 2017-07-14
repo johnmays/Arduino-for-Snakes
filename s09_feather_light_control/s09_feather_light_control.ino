@@ -20,6 +20,8 @@
 
 Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #A5 & CLK PIN #A4:
 
+
+
 unsigned long previousMillis = 0;
 int previousProtoSwitchState = 0;
 
@@ -36,17 +38,22 @@ bool backlight = true;
   const int offMinutes = 00;
   const bool offAM = false;
 
-int curHours = 0;
-int curMinutes = 44;
-int curSeconds = 00;
-bool curAM = true;
+int curHours = 3; //( +1 )
+int curMinutes = 40;
+int curSeconds = 30;
+bool curAM = false;
+
+
 
 void setup() {
+  
   lcd.begin(16, 2);
   lcd.setBacklight(HIGH);
   backlight = true;
   lcd.clear();
   lcd.print("Hello, John");
+  pinMode(relayPin, OUTPUT);
+  pinMode(protoSwitchPin, INPUT);
   delay(2000);
 }
 
@@ -59,33 +66,10 @@ void loop() {
     printToLCD();//FLASHES TOO MUCH ON A HIGHER REFRESH RATE, ( >240 Hz)
   }
   manageTime();
-  //manageRelayState();
+  manageRelayState();
   manageBacklight();
 }
 
-
-void manageTime(){
-  //PROGRESSING MINUTES:
-  if(curSeconds == 60){
-    curSeconds = 0;
-    curMinutes = curMinutes + 1;
-  }
-  //PROGRESSING HOURS:
-  if(curMinutes == 60){
-    curMinutes = 0;
-    curHours = curHours + 1; 
-  }
-  //PROGRESSING AM/PM:
-  if(curHours == 12){
-    curHours ==  0;//WE WILL ADD 1 TO [curHours] BECAUSE TIME PROGRESSES FROM 1:00 TO 12:59.
-    if(curAM == true){
-      curAM = false;
-    }else{
-      curAM = true;
-    }
-  }
-    
-}
 void printToLCD(){
  //LINE 1: 
   lcd.clear();
@@ -128,6 +112,30 @@ void printToLCD(){
     lcd.print("PM");  
   }
 }
+
+void manageTime(){
+  //PROGRESSING MINUTES:
+  if(curSeconds == 60){
+    curSeconds = 0;
+    curMinutes = curMinutes + 1;
+  }
+  //PROGRESSING HOURS:
+  if(curMinutes == 60){
+    curMinutes = 0;
+    curHours = curHours + 1; 
+  }
+  //PROGRESSING AM/PM:
+  if(curHours == 12){
+    curHours =  0;//WE WILL ADD 1 TO [curHours] BECAUSE TIME PROGRESSES FROM 1:00 TO 12:59.
+    if(curAM == true){
+      curAM = false;
+    }else{
+      curAM = true;
+    }
+  }
+    
+}
+
 
 void manageRelayState(){
   if(curHours + 1 > onHours && onAM == curAM){
