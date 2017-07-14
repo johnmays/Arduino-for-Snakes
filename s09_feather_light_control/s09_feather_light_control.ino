@@ -1,4 +1,19 @@
-//A 
+/* PROJECT SUMMARY: 
+ * A project using the Adafruit Feather, 1x Relay Shield, and 16x2 LCD.
+ * The feather operates the relay to keep a light on and off in between
+ * the two times specified.  It displays those times and the current
+ * time on an LCD for any sort of necessary checkup.
+ */
+ 
+/* CIRCUIT SUMMARY:
+ * NOTE: Wing and Feather rest on a FeatherWing Doubler, effectively
+ * connecting all necessary wires.
+ * NOTE: Relay Control Pin is through Feather Pin [9]
+ * LCD [VIn] to Feather [USB]
+ * LCD [Gnd] to Feather [Gnd]
+ * LCD [DAT] to Feather [SDA]
+ * LCD [CLK] to Feather {SCL]
+ */
 
 
 #include <Adafruit_LiquidCrystal.h>//LCD LIBRARY
@@ -6,8 +21,11 @@
 Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #A5 & CLK PIN #A4:
 
 unsigned long previousMillis = 0;
+int previousProtoSwitchState = 0;
 
-const int relayPin = 5;
+const int relayPin = 9;
+const int protoSwitchPin = 10;
+bool backlight = true;
 
 //On at 9:00 AM
   const int onHours = 9;
@@ -18,15 +36,15 @@ const int relayPin = 5;
   const int offMinutes = 00;
   const bool offAM = false;
 
-int curHours = 11;
-int curMinutes = 00;
+int curHours = 0;
+int curMinutes = 44;
 int curSeconds = 00;
-bool curAM = false;
+bool curAM = true;
 
 void setup() {
-  // put your setup code here, to run once:
   lcd.begin(16, 2);
   lcd.setBacklight(HIGH);
+  backlight = true;
   lcd.clear();
   lcd.print("Hello, John");
   delay(2000);
@@ -38,25 +56,26 @@ void loop() {
     previousMillis = currentMillis;
         
     curSeconds = curSeconds + 1;
-    printToLCD();//flashes to much on a high refresh rate
+    printToLCD();//FLASHES TOO MUCH ON A HIGHER REFRESH RATE, ( >240 Hz)
   }
   manageTime();
   //manageRelayState();
+  manageBacklight();
 }
 
 
 void manageTime(){
-  //PROGRESSING MINUTES
+  //PROGRESSING MINUTES:
   if(curSeconds == 60){
     curSeconds = 0;
     curMinutes = curMinutes + 1;
   }
-  //PROGRESSING HOURS
+  //PROGRESSING HOURS:
   if(curMinutes == 60){
     curMinutes = 0;
-    curHours = curHours + 1;  
+    curHours = curHours + 1; 
   }
-  //PROGRESSING AM/PM
+  //PROGRESSING AM/PM:
   if(curHours == 12){
     curHours ==  0;//WE WILL ADD 1 TO [curHours] BECAUSE TIME PROGRESSES FROM 1:00 TO 12:59.
     if(curAM == true){
@@ -123,6 +142,20 @@ void manageRelayState(){
     digitalWrite(relayPin, HIGH);//LIGHT OFF
   }  
   
+}
+
+void manageBacklight(){
+  int protoSwitchState = digitalRead(protoSwitchPin);
+  if(previousProtoSwitchState != protoSwitchState && protoSwitchState == 0){
+    if(backlight == true){
+      lcd.setBacklight(LOW);
+      backlight = false;
+    }else if (backlight == false){
+      lcd.setBacklight(HIGH);
+      backlight = true;
+    }    
+  }
+  previousProtoSwitchState = protoSwitchState;
 }
 
 
