@@ -30,10 +30,10 @@ const int protoSwitchPin = 10;
 bool backlight = true;
 
 //CURRENT TIME:
-int curHours = 3; //( +1 )
-int curMinutes = 46;
+int curHours = 0; //( +1 )
+int curMinutes = 04;
 int curSeconds = 30;
-bool curAM = false;
+bool curAM = true;
 
 //ON AT 9:00 AM
   const int onHours = 9;
@@ -145,15 +145,15 @@ void manageTime(){
 
 void manageRelayState(){
   if(curHours + 1 > onHours && onAM == curAM){
-    digitalWrite(relayPin, LOW);//LIGHT ON
+    digitalWrite(relayPin, HIGH);//LIGHT ON
   } else if(curHours + 1 == onHours && curMinutes >= onMinutes && onAM == curAM){
-    digitalWrite(relayPin, LOW);//LIGHT ON
+    digitalWrite(relayPin, HIGH);//LIGHT ON
   } else if(curHours + 1 < offHours && curAM == offAM){
-    digitalWrite(relayPin, LOW);//LIGHT ON
+    digitalWrite(relayPin, HIGH);//LIGHT ON
   } else if(curHours + 1 == offHours && curMinutes < offMinutes && curAM == offAM){
-    digitalWrite(relayPin, LOW);//LIGHT ON
+    digitalWrite(relayPin, HIGH);//LIGHT ON
   }else{
-    digitalWrite(relayPin, HIGH);//LIGHT OFF
+    digitalWrite(relayPin, LOW);//LIGHT OFF
   }  
   
 }
