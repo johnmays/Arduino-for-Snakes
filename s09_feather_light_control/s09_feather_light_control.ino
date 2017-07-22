@@ -1,14 +1,16 @@
 /* PROJECT SUMMARY: 
- * A project using the Adafruit Feather, 1x Relay Shield, and 16x2 LCD.
- * The feather operates the relay to keep a light on and off in between
- * the two times specified.  It displays those times and the current
- * time on an LCD for any sort of necessary checkup.
+ * A project using the Adafruit Feather, 1x Relay Wing, 1x Precision
+ * RTC Wing, and a 16x2 LCD.  The feather operates the relay to keep a 
+ * light on and off in between the two times specified.  It displays 
+ * those times and the current time on an LCD for any sort of necessary 
+ * checkup.
  */
  
 /* CIRCUIT SUMMARY:
- * NOTE: Wing and Feather rest on a FeatherWing Doubler, effectively
+ * NOTE: Wings and Feather rest on a FeatherWing Tripler, effectively
  * connecting all necessary wires.
  * NOTE: Relay Control Pin is through Feather Pin [9]
+ * NOTE: there is a momentary switch wired into Pin [10]
  * LCD [VIn] to Feather [USB]
  * LCD [Gnd] to Feather [Gnd]
  * LCD [DAT] to Feather [SDA]
@@ -16,15 +18,22 @@
  */
 
 
-#include <Adafruit_LiquidCrystal.h>//LCD LIBRARY
-Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #SDA & CLK PIN #SCL:
-#include "RTClib.h"
-RTC_DS3231 rtc;
-#include <Wire.h>
+//LCD LIBRARY
+  #include <Adafruit_LiquidCrystal.h>
+//CONNECTING TO i2C, DAT PIN #SDA & CLK PIN #SCL:
+  Adafruit_LiquidCrystal lcd(0); 
+//CLOCK LIBRARY
+  #include "RTClib.h"
+//IDENTIFYING SPECIFIC CLOCK CHIP
+  RTC_DS3231 rtc;
+//HAS SOMETHING TO DO WITH ENABLING i2c
+  #include <Wire.h>
 
-unsigned long previousMillis = 0;
+
+int previousMinute = 0;
 
 const int relayPin = 9;
+
 const int protoSwitchPin = 10;
 int previousProtoSwitchState = 0;
 
@@ -51,6 +60,12 @@ void setup() {
   lcd.print("Hello, John");
   pinMode(relayPin, OUTPUT);
   pinMode(protoSwitchPin, INPUT);
+
+  //SETS CURRENT TIME BASED OFF TIME OF SKETCH UPLOAD:
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  /* NOTE: JANUARY 21, 2014 AT 3AM WOULD LOOK LIKE:
+   * rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+   */
   
   Serial.begin(9600);
   delay(3000);
@@ -61,46 +76,37 @@ void setup() {
   }
 
   if (rtc.lostPower()) {
-    Serial.println("RTC lost power, lets set the time!");
-    //SETS CURRENT TIME IF POWER LOST:
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    /* NOTE: JANUARY 21, 2014 AT 3am WOULD LOOK LIKE:
-     * rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-     */
+    Serial.println("RTC lost power, the time will be reset");
   }
 }
 
 void loop() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= 1000) {
-    previousMillis = currentMillis;
-    printToLCD();//FLASHES TOO MUCH ON A HIGHER REFRESH RATE, ( >240 Hz)
+  DateTime now = rtc.now();
+  if (now.minute() != previousMinute) {
+    //FLASHES TOO MUCH ON A HIGHER REFRESH RATE, NOW ONLY FLASHES ONCE A MINUTE
+    printToLCD();
   }
-  
-  //manageRelayState();
+  previousMinute = now.minute();
+  manageRelayState();
   manageBacklight();
 }
 
 void printToLCD(){
   DateTime now = rtc.now();
+  lcd.clear();
   
  //LINE 1: 
-  lcd.clear();
   lcd.print("IT IS ");
   if(now.hour() > 12 && now.hour() != 24){
-    //IT IS PM
     lcd.print(now.hour() - 12);
     curAM = false;
   }else if(now.hour() < 12 && now.hour() != 0){
-    //IT IS AM
     lcd.print(now.hour()); 
     curAM = true; 
   }else if(now.hour() == 12){
-    //IT IS PM
     lcd.print(now.hour());
     curAM = false;  
   }else if(now.hour() == 0){
-    //IT IS AM
     lcd.print("12");
     curAM = true;  
   }
@@ -126,11 +132,11 @@ void printToLCD(){
   }
   lcd.print(onMinutes);
   if(onAM == true){
-    lcd.print("AM");  
+    lcd.print(" AM");  
   }else{
-    lcd.print("PM");  
+    lcd.print(" PM");  
   }
-  lcd.print("->");
+  lcd.print("-");
   lcd.print(offHours - 12);
   lcd.print(":");
   if(offMinutes < 10){
@@ -139,9 +145,9 @@ void printToLCD(){
   
   lcd.print(offMinutes);
   if(offAM == true){
-    lcd.print("AM");  
+    lcd.print(" AM");  
   }else{
-    lcd.print("PM");  
+    lcd.print(" PM");  
   }
 }
 
