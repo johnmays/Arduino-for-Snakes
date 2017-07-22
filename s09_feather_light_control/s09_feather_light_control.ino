@@ -17,33 +17,29 @@
 
 
 #include <Adafruit_LiquidCrystal.h>//LCD LIBRARY
-
-Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #A5 & CLK PIN #A4:
-
-
+Adafruit_LiquidCrystal lcd(0);//CONNECTING TO i2C, DAT PIN #SDA & CLK PIN #SCL:
+#include "RTClib.h"
+RTC_DS3231 rtc;
+#include <Wire.h>
 
 unsigned long previousMillis = 0;
-int previousProtoSwitchState = 0;
 
 const int relayPin = 9;
 const int protoSwitchPin = 10;
-bool backlight = true;
+int previousProtoSwitchState = 0;
 
-//CURRENT TIME:
-int curHours = 0; //( +1 )
-int curMinutes = 04;
-int curSeconds = 30;
-bool curAM = true;
+bool backlight = true;
 
 //ON AT 9:00 AM
   const int onHours = 9;
   const int onMinutes = 00;
-  const bool onAM = true;
+  bool onAM = true;
 //OFF AT 10:00 PM 
-  const int offHours = 10;
+  const int offHours = 22;
   const int offMinutes = 00;
-  const bool offAM = false;
-
+  bool offAM = false;
+//STILL NEED TO DISPLAY A CURRENT AM
+  bool curAM;
 
 
 void setup() {
@@ -55,43 +51,68 @@ void setup() {
   lcd.print("Hello, John");
   pinMode(relayPin, OUTPUT);
   pinMode(protoSwitchPin, INPUT);
-  delay(2000);
+  
+  Serial.begin(9600);
+  delay(3000);
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, lets set the time!");
+    //SETS CURRENT TIME IF POWER LOST:
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    /* NOTE: JANUARY 21, 2014 AT 3am WOULD LOOK LIKE:
+     * rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+     */
+  }
 }
 
 void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= 1000) {
     previousMillis = currentMillis;
-        
-    curSeconds = curSeconds + 1;
     printToLCD();//FLASHES TOO MUCH ON A HIGHER REFRESH RATE, ( >240 Hz)
   }
-  manageTime();
-  manageRelayState();
+  
+  //manageRelayState();
   manageBacklight();
 }
 
 void printToLCD(){
+  DateTime now = rtc.now();
+  
  //LINE 1: 
   lcd.clear();
   lcd.print("IT IS ");
-  lcd.print(curHours + 1);
-  lcd.print(":");
-  if(curMinutes < 10){
-    lcd.print("0");//WANT TO PRINT '9:01', NOT '9:1'  
+  if(now.hour() > 12 && now.hour() != 24){
+    //IT IS PM
+    lcd.print(now.hour() - 12);
+    curAM = false;
+  }else if(now.hour() < 12){
+    //IT IS AM
+    lcd.print(now.hour()); 
+    curAM = true; 
+  }else if(now.hour() == 12){
+    //IT IS PM
+    lcd.print(now.hour());
+    curAM = false;  
+  }else if(now.hour() == 24){
+    //IT IS AM
+    lcd.print(now.hour() - 24);
+    curAM = true;  
   }
-  lcd.print(curMinutes);
   lcd.print(":");
-  if(curSeconds < 10){
-    lcd.print("0");//WANT TO PRINT '9:01', NOT '9:1'  
-  }
-  lcd.print(curSeconds);
+  lcd.print(now.minute());
   if(curAM == true){
-    lcd.print("AM");  
+    lcd.print(" AM");  
   }else{
-    lcd.print("PM");  
+    lcd.print(" PM");  
   }
   lcd.setCursor(0,1);
+  
  //LINE 2:
   lcd.print(onHours);
   lcd.print(":");
@@ -105,7 +126,7 @@ void printToLCD(){
     lcd.print("PM");  
   }
   lcd.print("->");
-  lcd.print(offHours);
+  lcd.print(offHours - 12);
   lcd.print(":");
   if(offMinutes < 10){
      lcd.print("0"); 
@@ -119,44 +140,24 @@ void printToLCD(){
   }
 }
 
-void manageTime(){
-  //PROGRESSING MINUTES:
-  if(curSeconds == 60){
-    curSeconds = 0;
-    curMinutes = curMinutes + 1;
-  }
-  //PROGRESSING HOURS:
-  if(curMinutes == 60){
-    curMinutes = 0;
-    curHours = curHours + 1; 
-  }
-  //PROGRESSING AM/PM:
-  if(curHours == 12){
-    curHours =  0;//WE WILL ADD 1 TO [curHours] BECAUSE TIME PROGRESSES FROM 1:00 TO 12:59.
-    if(curAM == true){
-      curAM = false;
-    }else{
-      curAM = true;
-    }
-  }
-    
-}
-
 
 void manageRelayState(){
-  if(curHours + 1 > onHours && onAM == curAM){
+  DateTime now = rtc.now();
+  
+  if(now.hour() > onHours && onAM == curAM){
     digitalWrite(relayPin, HIGH);//LIGHT ON
-  } else if(curHours + 1 == onHours && curMinutes >= onMinutes && onAM == curAM){
+  } else if(now.hour() == onHours && now.minute() >= onMinutes && onAM == curAM){
     digitalWrite(relayPin, HIGH);//LIGHT ON
-  } else if(curHours + 1 < offHours && curAM == offAM){
+  } else if(now.hour() < offHours && curAM == offAM){
     digitalWrite(relayPin, HIGH);//LIGHT ON
-  } else if(curHours + 1 == offHours && curMinutes < offMinutes && curAM == offAM){
+  } else if(now.hour() == offHours && now.minute() < offMinutes && curAM == offAM){
     digitalWrite(relayPin, HIGH);//LIGHT ON
   }else{
     digitalWrite(relayPin, LOW);//LIGHT OFF
   }  
   
 }
+
 
 void manageBacklight(){
   int protoSwitchState = digitalRead(protoSwitchPin);
