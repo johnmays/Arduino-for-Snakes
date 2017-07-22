@@ -91,7 +91,7 @@ void printToLCD(){
     //IT IS PM
     lcd.print(now.hour() - 12);
     curAM = false;
-  }else if(now.hour() < 12){
+  }else if(now.hour() < 12 && now.hour() != 0){
     //IT IS AM
     lcd.print(now.hour()); 
     curAM = true; 
@@ -99,13 +99,18 @@ void printToLCD(){
     //IT IS PM
     lcd.print(now.hour());
     curAM = false;  
-  }else if(now.hour() == 24){
+  }else if(now.hour() == 0){
     //IT IS AM
-    lcd.print(now.hour() - 24);
+    lcd.print("12");
     curAM = true;  
   }
   lcd.print(":");
-  lcd.print(now.minute());
+  if(now.minute() < 10){
+    lcd.print("0");
+    lcd.print(now.minute());  
+  }else{
+    lcd.print(now.minute());
+  }
   if(curAM == true){
     lcd.print(" AM");  
   }else{
