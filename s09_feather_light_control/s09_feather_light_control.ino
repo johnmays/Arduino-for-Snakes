@@ -37,6 +37,8 @@ const int relayPin = 9;
 const int protoSwitchPin = 10;
 int previousProtoSwitchState = 0;
 
+int previousRelayState = 0;
+
 bool backlight = true;
 
 //ON AT 9:00 AM
@@ -172,6 +174,9 @@ void manageRelayState(){
 
 
 void manageBacklight(){
+  DateTime now = rtc.now();
+
+  //MANAGING VIA SWITCH
   int protoSwitchState = digitalRead(protoSwitchPin);
   if(previousProtoSwitchState != protoSwitchState && protoSwitchState == 0){
     if(backlight == true){
@@ -183,6 +188,22 @@ void manageBacklight(){
     }    
   }
   previousProtoSwitchState = protoSwitchState;
+
+  
+  //MANAGING VIA TIME OF DAY: (OFF ONCE AT NIGHT, ON ONCE IN MORNING)
+  int relayState = digitalRead(relayPin);
+  if(previousRelayState != relayState){
+    if(backlight == true){
+      lcd.setBacklight(LOW);
+      backlight = false;
+    }else if (backlight == false){
+      lcd.setBacklight(HIGH);
+      backlight = true;
+    }  
+  }
+  
+  previousRelayState = relayState;
+  
 }
 
 
