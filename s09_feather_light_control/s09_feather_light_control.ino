@@ -166,6 +166,12 @@ void manageRelayState(){
     digitalWrite(relayPin, HIGH);//LIGHT ON
   } else if(now.hour() == offHours && now.minute() < offMinutes && curAM == offAM){
     digitalWrite(relayPin, HIGH);//LIGHT ON
+  } else if(now.hour() == 12 && now.minute() == 0 && curAM == false){
+    //TO TAKE CARE OF STUPID BLINK
+    digitalWrite(relayPin, HIGH);//LIGHT ON
+  } else if(now.hour() == 12 && now.minute() == 0 && curAM == true){
+    //TO TAKE CARE OF STUPID BLINK
+    digitalWrite(relayPin, LOW);//LIGHT OFF
   }else{
     digitalWrite(relayPin, LOW);//LIGHT OFF
   }  
