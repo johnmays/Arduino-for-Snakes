@@ -214,9 +214,3 @@ void manageBacklight(){
   previousRelayState = relayState;
   
 }
-
-
-
-
-
-
