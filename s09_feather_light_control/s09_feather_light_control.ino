@@ -68,19 +68,16 @@ void setup() {
   Serial.begin(9600);
   delay(3000);
 
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    while (1);
-  }
 
-  if (rtc.lostPower()) {
+
+
     Serial.println("RTC lost power, the time will be reset");
     //SETS CURRENT TIME BASED OFF TIME OF SKETCH UPLOAD:
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     /* NOTE: JANUARY 21, 2014 AT 3AM WOULD LOOK LIKE:
      * rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
      */
-  }
+
 }
 
 void loop() {
